@@ -3,7 +3,7 @@
 **DataFeed** is a reimagining of the standard Unity console. 
 
 The functionality of DataFeed is divided into two windows:
-1. **Log viewer window
+1. **Log viewer window**
 2. **Command input window (Auxiliary to the first and optional)**
 
 <h2 align="center">Window Features</h2>
