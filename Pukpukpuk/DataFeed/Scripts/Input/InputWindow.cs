@@ -192,6 +192,7 @@ namespace Pukpukpuk.DataFeed.Input.Editor
         private void FocusInput()
         {
             GUI.FocusControl(InputFieldName);
+            focusPosition = Vector2Int.zero;
         }
 
         #endregion
@@ -385,7 +386,7 @@ namespace Pukpukpuk.DataFeed.Input.Editor
 
         private Completion GetCompletionAtFocus()
         {
-            return completionLines[focusPosition.y].Completions[focusPosition.x];
+            return completionLines[focusPosition.y % completionLines.Count].Completions[focusPosition.x];
         }
 
         #endregion
