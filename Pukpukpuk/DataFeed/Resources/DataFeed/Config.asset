@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 597dae6c1cc64634a466825950f524b0, type: 3}
+  m_Name: Config
+  m_EditorClassIdentifier: 
+  MaxEntries: 5000
+  MaxBufferSize: 20
+  Layers:
+  - Name: Commands
+    Hex: '#C2B4FF'
+  - Name: Events
+    Hex: '#E39764'
+  - Name: Cards
+    Hex: '#6EC077'
+  - Name: Map Builder
+    Hex: '#7FBBDC'
+  - Name: World Loader
+    Hex: '#AAEEEA'
+  - Name: Entities
+    Hex: '#D59DEB'
+  - Name: Chunk Renderer
+    Hex: '#FCEBA8'
+  - Name: State Controller
+    Hex: '#D4ECA6'
+  GameStartCommands:
+  - gamerule godmode True
+  - give CurseOfTurtle
+  - give CallToPawn
+  UpKey: 117
+  LeftKey: 104
+  DownKey: 106
+  RightKey: 107
