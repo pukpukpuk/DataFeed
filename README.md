@@ -4,7 +4,7 @@
 
 The functionality of DataFeed is divided into two windows:
 1. **Log viewer window**
-2. **Command input window (Auxiliary to the first and optional)**
+2. **Command input window** (Auxiliary to the first and optional)
 
 <h2 align="center">Window Features</h2>
 <h3>Log Viewer Window</h3>
