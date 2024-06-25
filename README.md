@@ -22,10 +22,13 @@ Auxiliary optional entries:
 > <img width="350" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/7e83d297-6037-4b65-b7ae-e33d45359b3a">
 
 <h3>Command Input Window</h3>
+
 In addition to the command input line, it has a completion list. The list consists of two parts:
 
 1. **Left** - displays completions based on existing commands and their arguments.
 2. **Right** - displays a list of suitable commands based on previously entered commands.
+
+> <img width="450" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/4f52193f-3c19-45bc-bbfc-d55494ad9185">
 
 In addition to mouse clicks, the list fully supports keyboard control:
 
