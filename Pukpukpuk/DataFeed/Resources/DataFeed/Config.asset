@@ -15,8 +15,8 @@ MonoBehaviour:
   MaxEntries: 5000
   MaxBufferSize: 20
   Layers:
-  - Name: Entities
-    Hex: '#D59DEB'
+  - Name: Commands
+    Hex: '#C2B4FF'
   GameStartCommands:
   - '# hi'
   UpKey: 117
