@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Pukpukpuk.DataFeed.Console.Windows
 {
@@ -18,6 +19,9 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         public KeyCode LeftKey = KeyCode.H;
         public KeyCode DownKey = KeyCode.J;
         public KeyCode RightKey = KeyCode.K;
+
+        public string ExportTableFont = "Consolas";
+        [FormerlySerializedAs("AddTimeBetweenEntries")] public bool AlsoAddTimeBetweenEntries = true;
     }
 
     [Serializable]

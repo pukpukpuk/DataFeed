@@ -11,7 +11,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 {
 #if UNITY_EDITOR
     [Serializable]
-    public class ConsoleWindow : EditorWindow
+    public class ConsoleWindow : EditorWindow, IHasCustomMenu
     {
         private const int MaxEntriesCount = 5000;
 
@@ -99,10 +99,11 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
         public static ConsoleConfig GetConfig()
         {
-            if (Instance != null && Instance._config != null) return Instance._config;
+            var instanceIsNull = Instance == null;
+            if (!instanceIsNull && Instance._config != null) return Instance._config;
 
             var loadedConfig = Resources.Load<ConsoleConfig>("DataFeed/Config");
-            if (Instance != null) Instance._config = loadedConfig;
+            if (!instanceIsNull) Instance._config = loadedConfig;
             return loadedConfig;
         }
 
@@ -142,7 +143,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             window.UpdateTitleText();
             window.Show();
         }
-
+        
         public static Texture GetDataFeedIcon()
         {
             return Resources.Load<Texture>("DataFeed/Icon");
@@ -252,29 +253,9 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             if (seenLogEntries.Count == 0) return;
             UpdateLayerColumnWidth(seenLogEntries);
 
-            #region AutoScroll
-
-            // Прикрепляемся ко дну, если количество записей изменилось и скролл и так был на дне
-            var currentTotalHeight = seenLogEntries.Count * LineHeight;
-            var wasOnBottom = scrollPosition + areaHeight >= previousTotalHeight - LineHeight;
-            if (wasOnBottom) scrollPosition = currentTotalHeight - areaHeight;
-
-            var scrollPosition_safe = scrollPosition = GUILayout.BeginScrollView(new Vector2(0, scrollPosition)).y;
-
-            if (Event.current.type == EventType.Repaint) scrollPosition_safe = previousScrollPosition;
-            else previousScrollPosition = scrollPosition_safe;
-
-            #endregion
-
-            // Из координат границ видимой части получаем индексы крайних видимых записей
-            var firstBound = Mathf.FloorToInt(scrollPosition_safe / LineHeight);
-            var secondBound = Mathf.FloorToInt((scrollPosition_safe + areaHeight) / LineHeight);
-
-            firstBound = Math.Clamp(firstBound, 0, seenLogEntries.Count - 1);
-            secondBound = Math.Clamp(secondBound, 0, seenLogEntries.Count - 1);
-
-            // Вместо невидимых записей рисуем пробелы, чтобы не менять геометрию интерфейса
-            // Пробел, заменяющий записи до видимых
+            var scrollPosition_safe = UpdateAutoScroll(seenLogEntries, areaHeight);
+            var (firstBound, secondBound) = CalculateBounds(scrollPosition_safe, areaHeight, seenLogEntries);
+            
             GUILayout.Space(firstBound * LineHeight);
 
             var previousSelected = selectedEntry;
@@ -285,25 +266,56 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
                 var style = entry == selectedEntry ? SelectedStyle : GetStyle(i % 2 == 0);
                 entry.Draw(style);
-
-                var rect = GUILayoutUtility.GetLastRect();
-                if (Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
-                {
-                    selectedEntry = entry as LogEntry;
-                    stackViewerScroll = 0;
-                }
+                UpdateSelectedEntry(entry);
             }
-
-            // Пробел, заменяющий записи после видимых
+            
             GUILayout.Space((seenLogEntries.Count - secondBound - 1) * LineHeight);
 
             GUILayout.FlexibleSpace();
-            previousTotalHeight = currentTotalHeight;
             GUILayout.EndScrollView();
 
             if (previousSelected != selectedEntry) Repaint();
         }
 
+        private float UpdateAutoScroll(List<ILogEntry> seenLogEntries, float areaHeight)
+        {
+            var currentTotalHeight = seenLogEntries.Count * LineHeight;
+            var wasOnBottom = scrollPosition + areaHeight >= previousTotalHeight - 5;
+            if (wasOnBottom) scrollPosition = currentTotalHeight - areaHeight;
+            previousTotalHeight = currentTotalHeight;
+            
+            var scrollPosition_safe = scrollPosition = GUILayout.BeginScrollView(new Vector2(0, scrollPosition)).y;
+
+            if (Event.current.type == EventType.Repaint) scrollPosition_safe = previousScrollPosition;
+            else previousScrollPosition = scrollPosition_safe;
+
+            return scrollPosition_safe;
+        }
+
+        private (int firstBound, int secondBound) CalculateBounds(
+            float scrollPosition_safe, 
+            float areaHeight, 
+            List<ILogEntry> seenLogEntries)
+        {
+            var firstBound = Mathf.FloorToInt(scrollPosition_safe / LineHeight);
+            var secondBound = Mathf.FloorToInt((scrollPosition_safe + areaHeight) / LineHeight);
+
+            firstBound = Math.Clamp(firstBound, 0, seenLogEntries.Count - 1);
+            secondBound = Math.Clamp(secondBound, 0, seenLogEntries.Count - 1);
+
+            return (firstBound, secondBound);
+        }
+
+        private void UpdateSelectedEntry(ILogEntry currentlyDrawnEntry)
+        {
+            var rect = GUILayoutUtility.GetLastRect();
+            if (Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
+            {
+                selectedEntry = currentlyDrawnEntry as LogEntry;
+                stackViewerScroll = 0;
+            }
+        }
+        
         #region Pure Methods
 
         [Pure]
@@ -471,7 +483,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void OnBeforeSceneLoad()
         {
-            Instance.Log.Clear();
+            Instance.Log?.Clear();
         }
 
         private void OnDestroy()
@@ -489,6 +501,22 @@ namespace Pukpukpuk.DataFeed.Console.Windows
                 messageType.ToString(), stacktrace);
         }
 
+        #endregion
+        
+        #region Export
+
+        void IHasCustomMenu.AddItemsToMenu(GenericMenu menu)
+        {
+            menu.AddItem(new GUIContent("Export log to .xlsx"), false, () => TableExporter.CreateXLSXFile(Log));
+            menu.AddItem(new GUIContent("Export log to .csv"), false, () => TableExporter.CreateCSVFile(Log));
+
+            var config = GetConfig();
+            var currentValue = config.AlsoAddTimeBetweenEntries;
+            menu.AddItem(new GUIContent("Also Add Time Between Entries"), 
+                currentValue, 
+                () => config.AlsoAddTimeBetweenEntries = !currentValue);
+        }
+        
         #endregion
     }
 #endif

@@ -15,27 +15,12 @@ MonoBehaviour:
   MaxEntries: 5000
   MaxBufferSize: 20
   Layers:
-  - Name: Commands
-    Hex: '#C2B4FF'
-  - Name: Events
-    Hex: '#E39764'
-  - Name: Cards
-    Hex: '#6EC077'
-  - Name: Map Builder
-    Hex: '#7FBBDC'
-  - Name: World Loader
-    Hex: '#AAEEEA'
   - Name: Entities
     Hex: '#D59DEB'
-  - Name: Chunk Renderer
-    Hex: '#FCEBA8'
-  - Name: State Controller
-    Hex: '#D4ECA6'
   GameStartCommands:
-  - gamerule godmode True
-  - give CurseOfTurtle
-  - give CallToPawn
+  - '# hi'
   UpKey: 117
   LeftKey: 104
   DownKey: 106
   RightKey: 107
+  ExportTableFont: Consolas

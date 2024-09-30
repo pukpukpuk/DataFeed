@@ -40,7 +40,7 @@ namespace Pukpukpuk.DataFeed.Console
         public static void LogLayer(object message, string layerName, string textColor = White,
             LogMessageType logMessageType = LogMessageType.Info, string prefix = null, string tag = null)
         {
-            var text = ColorUtils.ColorText(textColor, message.ToString());
+            var text = ColorUtils.ColorText(textColor, message?.ToString());
 #if UNITY_EDITOR
             ConsoleWindow.LogToConsole(text, layerName, logMessageType, tag, prefix);
 #endif
@@ -65,7 +65,7 @@ namespace Pukpukpuk.DataFeed.Console
         public static void Log(object message, string textColor = White,
             LogMessageType logMessageType = LogMessageType.Info)
         {
-            var text = ColorUtils.ColorText(textColor, message.ToString());
+            var text = ColorUtils.ColorText(textColor, message?.ToString());
 #if UNITY_EDITOR
             ConsoleWindow.LogToConsole(text, "Undefined", logMessageType);
 #endif

@@ -7,7 +7,7 @@ namespace Pukpukpuk.DataFeed.Console.Entries
 #if UNITY_EDITOR
     public class PauseEntry : ILogEntry
     {
-        private const float MinElapsedTimeBetweenEntries = 2f;
+        public const float MinElapsedTimeBetweenEntries = 2f;
         private readonly ConsoleWindow _consoleWindow;
         private readonly List<ILogEntry> _entries;
 
@@ -34,15 +34,15 @@ namespace Pukpukpuk.DataFeed.Console.Entries
             if (_entries[_index] is not LogEntry) return false;
             if (_entries[_index + 1] is not LogEntry) return false;
 
-            elapsedTime = GetElapsedTime();
+            var first = (LogEntry)_entries[_index];
+            var second = (LogEntry)_entries[_index + 1];
+            
+            elapsedTime = GetElapsedTime(first, second);
             return elapsedTime >= MinElapsedTimeBetweenEntries;
         }
 
-        private float GetElapsedTime()
+        public static float GetElapsedTime(LogEntry first, LogEntry second)
         {
-            var first = (LogEntry)_entries[_index];
-            var second = (LogEntry)_entries[_index + 1];
-
             return Mathf.Floor((second.Time - first.Time) * 100f) / 100f;
         }
     }

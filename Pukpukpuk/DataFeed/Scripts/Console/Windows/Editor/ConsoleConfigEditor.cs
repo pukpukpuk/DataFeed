@@ -34,6 +34,12 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             DrawInputSettings();
             GUILayout.EndVertical();
 
+            EditorGUILayout.Separator();
+
+            GUILayout.BeginVertical(BoxStyle);
+            DrawLogExportSettings();
+            GUILayout.EndVertical();
+            
             SaveIfNeeded();
         }
 
@@ -51,6 +57,14 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             DrawKeyFields();
         }
 
+        private void DrawLogExportSettings()
+        {
+            _consoleConfig.ExportTableFont = EditorGUILayout.TextField("Export Table Font",
+                _consoleConfig.ExportTableFont);
+            _consoleConfig.AlsoAddTimeBetweenEntries = EditorGUILayout.Toggle("Also Add Time Between Entries",
+                _consoleConfig.AlsoAddTimeBetweenEntries);
+        }
+        
         private void DrawKeyFields()
         {
             GUILayout.BeginVertical(BoxStyle);
@@ -136,5 +150,14 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         {
             BoxStyle ??= new GUIStyle("HelpBox") { padding = new RectOffset(10, 10, 5, 5) };
         }
+        
+        [MenuItem("Tools/Pukpukpuk/Open DataFeed Config")]
+        private static void Create()
+        {
+            var config = ConsoleWindow.GetConfig();
+            Selection.activeObject = config;
+            EditorGUIUtility.PingObject(config);
+        }
+
     }
 }

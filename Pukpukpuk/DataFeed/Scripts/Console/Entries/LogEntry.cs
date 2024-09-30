@@ -18,7 +18,14 @@ namespace Pukpukpuk.DataFeed.Console.Entries
         public string LayerText;
         public string Tag;
 
-        public string Stack = "Stack";
+        private string _stack = "Stack";
+
+        public string Stack
+        {
+            get => _stack;
+            set => _stack = RemovePointlessLines(value);
+        }
+
         [SerializeField] private float _time;
 
         public ConsoleWindow ConsoleWindow;
@@ -76,7 +83,7 @@ namespace Pukpukpuk.DataFeed.Console.Entries
 
             return styleCopy;
         }
-
+        
         private void DrawMessageLine(GUIStyle style)
         {
             GUILayout.BeginHorizontal(style);
@@ -149,8 +156,15 @@ namespace Pukpukpuk.DataFeed.Console.Entries
         private IEnumerable<string> GetLinesFromStack(string stack)
         {
             return stack.Split("\n")
-                .Select(line => line.Trim())
+                .Select(line => line.Trim());
+        }
+
+        private string RemovePointlessLines(string stack)
+        {
+            var lines = GetLinesFromStack(stack)
                 .SkipWhile(line => line.Contains("Log") || line.Contains("StackTrace ("));
+
+            return string.Join("\n", lines);
         }
     }
 #endif

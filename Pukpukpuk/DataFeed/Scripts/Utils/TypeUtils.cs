@@ -16,5 +16,6 @@ namespace Pukpukpuk.DataFeed.Utils
                         .Where(type => type.IsSubclassOf(typeof(T)))
                 ).ToList();
         }
+        
     }
 }
