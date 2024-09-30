@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/pukpukpuk/DataFeed/assets/83503177/b98d3030-3d78-4926-8c62-0b4610270df5" width="500" ></p>
+<p align="center"><img src="ReadmeAssets/Cover.png" width="500" ></p>
 
 **DataFeed** is a reimagining of the standard Unity console. 
 
@@ -10,16 +10,21 @@ The functionality of DataFeed is divided into two windows:
 <h3>Log Viewer Window</h3>
 
 Logs are displayed in a practical table format
-> <img width="400" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/df1ca917-8270-4307-a7c7-cc82c796d412">
+> <img width="400" src="ReadmeAssets/ConsoleWindow.png"></br>
 
 Support for customizable layers and tags for logs and filtering entries by them
-> <img width="400" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/bc5f2a7e-e50b-4a1a-a4a4-d30c89f2605d">&emsp;&ensp;<img width="250" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/9c6de8f4-d5db-4cd7-9455-b9278e102820">
+> <img width="400" src="ReadmeAssets/Layers.png">&emsp;&ensp;<img width="250" src="ReadmeAssets/Tags.png"></br>
 
 Auxiliary optional entries:
 * Entry indicating a significant time difference between entries (useful for turn-based games)
-> <img width="350" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/92f9edac-bae8-4d77-b134-3282e3b5fb30">
+> <img width="350" src="ReadmeAssets/TimeBetweenEntries.png"></br>
 * Entry combining non-passed filter entries into a collapsible group
-> <img width="350" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/7e83d297-6037-4b65-b7ae-e33d45359b3a">
+> <img width="350" src="ReadmeAssets/HiddenGroups.png"></br>
+
+Log export to .xlsx and .csv is accessible by console window menu. 
+> <img width="350" src="ReadmeAssets/ExportButtons.png"></br>
+
+* The exported logs will be located in the `ProjectFolder/Logs` folder.
 
 <h3>Command Input Window</h3>
 
@@ -28,7 +33,7 @@ In addition to the command input line, it has a completion list. The list consis
 1. **Left** - displays completions based on existing commands and their arguments.
 2. **Right** - displays a list of suitable commands based on previously entered commands.
 
-> <img width="450" src="https://github.com/pukpukpuk/DataFeed/assets/83503177/4f52193f-3c19-45bc-bbfc-d55494ad9185">
+> <img width="450" src="ReadmeAssets/InputWindow.png"></br>
 
 In addition to mouse clicks, the list fully supports keyboard control:
 
@@ -39,20 +44,22 @@ In addition to mouse clicks, the list fully supports keyboard control:
 
 <h2 align="center">Usage Guide</h2>
 
-<h3>Config path</h3>
+<h3>Where is the config?</h3>
 
-`Assets/Plugins/Pukpukpuk/DataFeed/Resources/DataFeed/`
+You can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
 
-<h3>Sending messages to console</h3>
+The config is located here: `Assets/Plugins/Pukpukpuk/DataFeed/Resources/DataFeed/`
 
-`DebugUtils` is responsible for console message output:
+<h3>How to send messages to the console?</h3>
+
+`DebugUtils` class is responsible for console message output:
 
 ```cs
 DebugUtils.Log("Hello World!");
 DebugUtils.LogLayer("Hello World!", "Game", tag:"SomeTag");
 ```
 
-<h3>How to make your own commands</h3>
+<h3>How to make own commands?</h3>
 
 Each command must inherit the `Pukpukpuk.DataFeed.Input.Command` class, and there is no need to register the command additionally.
 
