@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -7,19 +8,8 @@ namespace Pukpukpuk.DataFeed.Input
     [MeansImplicitUse]
     public abstract class Command
     {
-        /// <summary>
-        /// The name by which this command is to be referred to
-        /// </summary>
-        public abstract string GetAlias();
-
-        /// <summary>
-        /// Should the command only work when the game is running. Default - true
-        /// </summary>
-        public virtual bool IsOnlyForGame()
-        {
-            return true;
-        }
-
+        private bool IsOnlyForGame => GetType().GetCustomAttribute<CommandInfoAttribute>(true).IsOnlyForGame;
+        
         /// <summary>
         /// Command execution
         /// </summary>
@@ -28,7 +18,7 @@ namespace Pukpukpuk.DataFeed.Input
         /// <returns>Result of command execution</returns>
         public string Execute(string[] args, out bool isError)
         {
-            if (!Application.isPlaying && IsOnlyForGame())
+            if (!Application.isPlaying && IsOnlyForGame)
             {
                 isError = true;
                 return "This command can only be used during game is running!";

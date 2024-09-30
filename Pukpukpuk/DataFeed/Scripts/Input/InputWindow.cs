@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Pukpukpuk.DataFeed.Console;
 using Pukpukpuk.DataFeed.Console.Windows;
 using Pukpukpuk.DataFeed.Utils;
@@ -427,14 +428,19 @@ namespace Pukpukpuk.DataFeed.Input.Editor
         private void UpdateCommandsList()
         {
             if (commands != null && editorCommands != null) return;
-            commands = TypeUtils.GetAllSubclasses<Command>()
-                .Select(Activator.CreateInstance)
-                .Cast<Command>()
-                .ToDictionary(command => command.GetAlias(), command => command);
 
-            editorCommands = commands
-                .Where(pair => !pair.Value.IsOnlyForGame())
-                .ToDictionary(pair => pair.Key, pair => pair.Value);
+            var tuples = TypeUtils.GetAllSubclasses<Command>()
+                .Select(type => (type, info: type.GetCustomAttribute<CommandInfoAttribute>(true)))
+                .Where(tuple => tuple.info != null)
+                .Select(tuple => (command: (Command)Activator.CreateInstance(tuple.type), tuple.info));
+
+            commands = new Dictionary<string, Command>();
+            editorCommands = new Dictionary<string, Command>();
+            foreach (var (command, info) in tuples)
+            {
+                commands.Add(info.Alias, command);
+                if (!info.IsOnlyForGame) editorCommands.Add(info.Alias, command);
+            }
         }
 
         #endregion

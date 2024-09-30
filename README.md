@@ -25,6 +25,7 @@ Log export to .xlsx and .csv is accessible by console window menu.
 > <img width="350" src="ReadmeAssets/ExportButtons.png"></br>
 
 * The exported logs will be located in the `ProjectFolder/Logs` folder.
+* Default font for .xlsx tables is **Consolas**, you can change it in the DataFeed config.
 
 <h3>Command Input Window</h3>
 
@@ -46,7 +47,7 @@ In addition to mouse clicks, the list fully supports keyboard control:
 
 <h3>Where is the config?</h3>
 
-You can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
+Also you can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
 
 The config is located here: `Assets/Plugins/Pukpukpuk/DataFeed/Resources/DataFeed/`
 
@@ -61,6 +62,52 @@ DebugUtils.LogLayer("Hello World!", "Game", tag:"SomeTag");
 
 <h3>How to make own commands?</h3>
 
-Each command must inherit the `Pukpukpuk.DataFeed.Input.Command` class, and there is no need to register the command additionally.
+Each command must inherit the `Pukpukpuk.DataFeed.Input.Command` class and have `Pukpukpuk.DataFeed.Input.CommandInfo` attribute. There is no need to register the command additionally.
 
 The operation of the command is specified in the `Execute_hided()` method, and the list of completions in `GetCompletions()`. Other information is specified in the xml-comments of the `Command` class.
+
+Command code example:
+```cs
+using System.Collections.Generic;
+using System.Linq;
+using Pukpukpuk.DataFeed.Input;
+
+// False means that the command can be called not only while game is running
+[CommandInfo("sum", false)]
+public class SumCommand : Command
+{
+    private static readonly List<string> SuggestedNumbers = new() {"1", "2", "3"};
+    
+    // Command must return an output message after end of its work. 
+    protected override string Execute_hided(string[] args, out bool isError)
+    {
+        // If isError is true, command output will be marked as error.
+        isError = true;
+        if (args.Length == 0) return "Not enough arguments!";
+
+        var result = 0;
+        foreach (var arg in args) 
+        {
+            if (!int.TryParse(arg, out var i))
+            {
+                return "One of the arguments is not an integer!";
+            }
+
+            result += i;
+        }
+
+        isError = false;
+        return $"Sum: {result}";
+    }
+
+    public override List<string> GetCompletions(
+        string lastArgument, 
+        int lastArgumentIndex, 
+        List<string> args)
+    {
+        return SuggestedNumbers
+            .Where(number => !args.Contains(number))
+            .ToList();
+    }
+}
+```
