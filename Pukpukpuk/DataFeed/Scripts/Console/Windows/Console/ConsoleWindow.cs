@@ -6,66 +6,69 @@ using Pukpukpuk.DataFeed.Console.Entries;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-namespace Pukpukpuk.DataFeed.Console.Windows
+namespace Pukpukpuk.DataFeed.Console.Windows.Console
 {
 #if UNITY_EDITOR
     [Serializable]
     public class ConsoleWindow : EditorWindow, IHasCustomMenu
     {
+        public static readonly Color HighlightedText = new(.8f, .8f, .5f, .3f);
+        
         private const int MaxEntriesCount = 5000;
 
         public const float TimeColumnWidth = 78f;
         private const float ScrollbarWidth = 30f;
         public const float LineHeight = 22;
-        public static ConsoleWindow Instance;
-
-        private static float[] ToolbarWidth = { 45f, 105f, 95f, 140f };
+        public static ConsoleWindow Inst;
+        
         public float LayerColumnWidth = 100f;
         public GUIStyle TextStyle;
 
         public List<LogEntry> Log = new();
-        [SerializeField] private SerializableDictionary<string, bool> tags = new();
-
-        [SerializeField] private float scrollPosition;
+        [SerializeField] public SerializableDictionary<string, bool> Layers = new();
+        [SerializeField] public SerializableDictionary<string, bool> Tags = new();
+        
         [SerializeField] private SplitterData SplitterData;
-        [SerializeField] private SerializableDictionary<string, bool> layers = new();
-        [SerializeField] private ConsoleConfig _config;
-
-        [SerializeField] private List<HiddenEntriesGroup> previousHiddenGroups = new();
-
-        [SerializeField] private bool isTimeBetweenEnabled;
-        [SerializeField] private bool isHiddenGroupsEnabled;
-
-        [SerializeField] private string searchText;
-        private float autoUpdateCooldown;
-        private GUIStyle EvenStyle;
-
-        private bool needRepaint;
-
-        private GUIStyle OddStyle;
+        [SerializeField] public float ScrollPosition;
         private float previousScrollPosition;
-
-        private float previousTotalHeight;
-
-        private LogEntry selectedEntry;
-        private GUIStyle SelectedStyle;
-        private GUIStyle StackStyle;
         private float stackViewerScroll;
-        private float SearchFieldWidth => Instance.WindowWidth - ToolbarWidth.Sum() + 25;
+        public float LogViewerHeight;
+        
+        [SerializeField] private ConsoleConfig _config;
+        [SerializeField] private List<HiddenEntriesGroup> previousHiddenGroups = new();
+        [SerializeField] public bool IsTimeBetweenEnabled;
+        [SerializeField] public bool IsHiddenGroupsEnabled;
 
+        [SerializeField] public string SearchText;
+        [SerializeField] public ToolbarDrawer ToolbarDrawer;
+        
+        public LogEntry SelectedEntry;
+        
+        private float autoUpdateCooldown;
+        private bool needRepaint;
+        public float PreviousTotalHeight;
+        
+        private GUIStyle EvenStyle;
+        private GUIStyle OddStyle;
+        private GUIStyle StyleOfSelected;
+        private GUIStyle StackStyle;
+        
         public float WindowWidth => position.width - ScrollbarWidth;
         public float MessageColumnWidth => WindowWidth - LayerColumnWidth - TimeColumnWidth;
-
+        
         private void OnGUI()
         {
             RemoveRedundantEntries();
-            DrawToolbar();
+            
+            ToolbarDrawer ??= new ToolbarDrawer();
+            ToolbarDrawer.DrawToolbar();
 
             SplitterData ??= new SplitterData(this, false) { YOffset = LineHeight };
 
-            Splitter.BeginFirstPart(SplitterData, out var height);
-            DrawTable(height);
+            Splitter.BeginFirstPart(SplitterData, out LogViewerHeight);
+            DrawTable(LogViewerHeight);
             Splitter.BeginSecondPart(SplitterData);
             DrawStackInfo();
             Splitter.End();
@@ -73,11 +76,11 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
         private void DrawStackInfo()
         {
-            if (selectedEntry == null) return;
+            if (SelectedEntry == null) return;
 
             stackViewerScroll = EditorGUILayout.BeginScrollView(new Vector2(0, stackViewerScroll)).y;
 
-            var text = selectedEntry.Message + "\n" + selectedEntry.GetStackWithHyperlinks();
+            var text = SelectedEntry.Message + "\n" + SelectedEntry.GetStackWithHyperlinks();
             var height = StackStyle.CalcHeight(new GUIContent(text), position.width - 12);
 
             EditorGUILayout.SelectableLabel(text, StackStyle,
@@ -99,11 +102,11 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
         public static ConsoleConfig GetConfig()
         {
-            var instanceIsNull = Instance == null;
-            if (!instanceIsNull && Instance._config != null) return Instance._config;
+            var instanceIsNull = Inst == null;
+            if (!instanceIsNull && Inst._config != null) return Inst._config;
 
             var loadedConfig = Resources.Load<ConsoleConfig>("DataFeed/Config");
-            if (!instanceIsNull) Instance._config = loadedConfig;
+            if (!instanceIsNull) Inst._config = loadedConfig;
             return loadedConfig;
         }
 
@@ -111,16 +114,16 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             LogMessageType messageType = LogMessageType.Info,
             string tag = null, string customPrefix = null, string customStack = null)
         {
-            if (Instance == null) return;
+            if (Inst == null) return;
 
             var time = Time.realtimeSinceStartup;
             var layerText = customPrefix ?? layerName;
             var stack = customStack ?? StackTraceUtility.ExtractStackTrace();
             var layer = GetConfig().Layers.Find(layer => layer.Name == layerName) ?? Layer.Undefined;
 
-            if (tag != null) Instance.tags.TryAdd(tag, true);
+            if (tag != null) Inst.Tags.TryAdd(tag, true);
 
-            var entry = new LogEntry(message, layer, time, Instance)
+            var entry = new LogEntry(message, layer, time, Inst)
             {
                 MessageType = messageType,
                 LayerText = layerText,
@@ -128,8 +131,8 @@ namespace Pukpukpuk.DataFeed.Console.Windows
                 Stack = stack
             };
 
-            Instance.Log.Add(entry);
-            Instance.needRepaint = true;
+            Inst.Log.Add(entry);
+            Inst.needRepaint = true;
         }
 
         [MenuItem("Tools/Pukpukpuk/DataFeed Console")]
@@ -137,7 +140,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         {
             var window = GetWindow<ConsoleWindow>();
 
-            Instance = window;
+            Inst = window;
 
             window.titleContent = new GUIContent(GetDataFeedIcon());
             window.UpdateTitleText();
@@ -148,100 +151,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         {
             return Resources.Load<Texture>("DataFeed/Icon");
         }
-
-        #region Toolbar
-
-        private void DrawToolbar()
-        {
-            GUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("Clear", new GUIStyle("TE toolbarbutton"),
-                    GUILayout.Width(ToolbarWidth[0])))
-            {
-                Log.Clear();
-                tags.Clear();
-                selectedEntry = null;
-            }
-
-            DrawShownLayersPopup();
-            DrawShownTagsPopup();
-            DrawSearchField();
-            DrawSubEntries();
-
-            GUILayout.EndHorizontal();
-        }
-
-        private void DrawShownLayersPopup()
-        {
-            if (GUILayout.Button("Shown Layers", new GUIStyle("ToolbarDropDownLeft"),
-                    GUILayout.Width(ToolbarWidth[1])))
-            {
-                var menu = new GenericMenu();
-
-                var countCondition = layers.Count == GetConfig().Layers.Count;
-                var isEverythingOn = countCondition && layers.Values.All(value => value);
-                var isNothingOn = countCondition && layers.Values.All(value => !value);
-
-                menu.AddItem(new GUIContent("Everything"), isEverythingOn,
-                    () => GetConfig().Layers.ForEach(layer => SetLayerState(layer, true)));
-                menu.AddItem(new GUIContent("Nothing"), isNothingOn,
-                    () => GetConfig().Layers.ForEach(layer => SetLayerState(layer, false)));
-
-                menu.AddSeparator("");
-                foreach (var layer in GetConfig().Layers)
-                {
-                    var on = true;
-                    if (!layers.TryAdd(layer.Name, true)) on = layers[layer.Name];
-
-                    menu.AddItem(new GUIContent(layer.Name), on, () => SetLayerState(layer, !layers[layer.Name]));
-                }
-
-                menu.ShowAsContext();
-            }
-        }
-
-        private void SetLayerState(Layer layer, bool state)
-        {
-            if (layers.TryAdd(layer.Name, state)) return;
-            layers[layer.Name] = state;
-        }
-
-        private void DrawSearchField()
-        {
-            var width = SearchFieldWidth;
-            if (width < 10) return;
-            searchText = GUILayout.TextField(searchText, new GUIStyle("SearchTextField"),
-                GUILayout.Width(width));
-        }
-
-        private void DrawShownTagsPopup()
-        {
-            if (GUILayout.Button("Shown Tags", new GUIStyle("ToolbarDropDownLeft"),
-                    GUILayout.Width(ToolbarWidth[2])))
-            {
-                var menu = new GenericMenu();
-                foreach (var pair in tags)
-                    menu.AddItem(new GUIContent(pair.Key), pair.Value, () => tags[pair.Key] = !pair.Value);
-                menu.ShowAsContext();
-            }
-        }
-
-        private void DrawSubEntries()
-        {
-            if (GUILayout.Button("Enabled Sub Entries", new GUIStyle("ToolbarDropDownRight"),
-                    GUILayout.Width(ToolbarWidth[3])))
-            {
-                var menu = new GenericMenu();
-                menu.AddItem(new GUIContent("Time Between"), isTimeBetweenEnabled,
-                    () => isTimeBetweenEnabled = !isTimeBetweenEnabled);
-                menu.AddItem(new GUIContent("Hidden Groups"), isHiddenGroupsEnabled,
-                    () => isHiddenGroupsEnabled = !isHiddenGroupsEnabled);
-                menu.ShowAsContext();
-            }
-        }
-
-        #endregion
-
+        
         #region Table
 
         private void DrawTable(float areaHeight)
@@ -249,7 +159,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             UpdateStyles();
             UpdateTitleText();
 
-            var seenLogEntries = !string.IsNullOrWhiteSpace(searchText) ? GetSearchedLogEntries() : GetSeenLogEntries();
+            var seenLogEntries = GetSeenLogEntries();
             if (seenLogEntries.Count == 0) return;
             UpdateLayerColumnWidth(seenLogEntries);
 
@@ -257,14 +167,13 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             var (firstBound, secondBound) = CalculateBounds(scrollPosition_safe, areaHeight, seenLogEntries);
             
             GUILayout.Space(firstBound * LineHeight);
-
-            var previousSelected = selectedEntry;
+            var previousSelected = SelectedEntry;
 
             for (var i = firstBound; i <= secondBound; i++)
             {
                 var entry = seenLogEntries[i];
 
-                var style = entry == selectedEntry ? SelectedStyle : GetStyle(i % 2 == 0);
+                var style = entry == SelectedEntry ? StyleOfSelected : GetStyle(i % 2 == 0);
                 entry.Draw(style);
                 UpdateSelectedEntry(entry);
             }
@@ -274,17 +183,17 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             GUILayout.FlexibleSpace();
             GUILayout.EndScrollView();
 
-            if (previousSelected != selectedEntry) Repaint();
+            if (previousSelected != SelectedEntry) Repaint();
         }
 
         private float UpdateAutoScroll(List<ILogEntry> seenLogEntries, float areaHeight)
         {
             var currentTotalHeight = seenLogEntries.Count * LineHeight;
-            var wasOnBottom = scrollPosition + areaHeight >= previousTotalHeight - 5;
-            if (wasOnBottom) scrollPosition = currentTotalHeight - areaHeight;
-            previousTotalHeight = currentTotalHeight;
+            var wasOnBottom = ScrollPosition + areaHeight >= PreviousTotalHeight - 5;
+            if (wasOnBottom) ScrollPosition = currentTotalHeight - areaHeight;
+            PreviousTotalHeight = currentTotalHeight;
             
-            var scrollPosition_safe = scrollPosition = GUILayout.BeginScrollView(new Vector2(0, scrollPosition)).y;
+            var scrollPosition_safe = ScrollPosition = GUILayout.BeginScrollView(new Vector2(0, ScrollPosition)).y;
 
             if (Event.current.type == EventType.Repaint) scrollPosition_safe = previousScrollPosition;
             else previousScrollPosition = scrollPosition_safe;
@@ -311,24 +220,12 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             var rect = GUILayoutUtility.GetLastRect();
             if (Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
             {
-                selectedEntry = currentlyDrawnEntry as LogEntry;
+                SelectedEntry = currentlyDrawnEntry as LogEntry;
                 stackViewerScroll = 0;
             }
         }
         
         #region Pure Methods
-
-        [Pure]
-        private List<ILogEntry> GetSearchedLogEntries()
-        {
-            var temp = searchText.Trim().ToLower();
-            var result = Log
-                .Where(entry => entry.MessageWithoutTags.Contains(temp, StringComparison.CurrentCultureIgnoreCase))
-                .Cast<ILogEntry>()
-                .ToList();
-
-            return result;
-        }
 
         [Pure]
         private List<ILogEntry> GetSeenLogEntries()
@@ -340,12 +237,12 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             var isHiddenGroupExpanded = false;
             foreach (var entry in Log)
             {
-                var tagCondition = entry.Tag == null || tags.GetValueOrDefault(entry.Tag, true);
-                var layerCondition = layers.GetValueOrDefault(entry.Layer.Name, true);
+                var tagCondition = entry.Tag == null || Tags.GetValueOrDefault(entry.Tag, true);
+                var layerCondition = Layers.GetValueOrDefault(entry.Layer.Name, true);
 
                 if (!tagCondition || !layerCondition)
                 {
-                    if (!isHiddenGroupsEnabled) continue;
+                    if (!IsHiddenGroupsEnabled) continue;
                     if (hiddenElementsCount++ == 0)
                     {
                         var expanded = previousHiddenGroups
@@ -370,12 +267,12 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             TryEndHiddenGroup();
             previousHiddenGroups = hiddenGroups;
 
-            if (isTimeBetweenEnabled)
-                for (var i = 0; i < result.Count; i++)
-                {
-                    var pauseEntry = new PauseEntry(i, result, this);
-                    if (pauseEntry.isMayBeDrawn()) result.Insert(i + 1, pauseEntry);
-                }
+            if (!IsTimeBetweenEnabled) return result;
+            for (var i = 0; i < result.Count; i++)
+            {
+                var pauseEntry = new PauseEntry(i, result, this);
+                if (pauseEntry.isMayBeDrawn()) result.Insert(i + 1, pauseEntry);
+            }
 
             return result;
 
@@ -403,12 +300,13 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         {
             OddStyle = TextureUtils.CreateBackground(new Color(.22f, .22f, .22f));
             EvenStyle = TextureUtils.CreateBackground(new Color(.25f, .25f, .25f));
-            SelectedStyle = TextureUtils.CreateBackground(new Color(.17f, .36f, .53f));
+            StyleOfSelected = TextureUtils.CreateBackground(new Color(.17f, .36f, .53f));
 
             TextStyle = new GUIStyle("Label");
             TextStyle.richText = true;
+            TextStyle.wordWrap = false;
             TextStyle.font = EditorGUIUtility.Load("Fonts/RobotoMono/RobotoMono-Regular.ttf") as Font;
-
+            
             StackStyle = new GUIStyle("Label")
             {
                 wordWrap = true,
@@ -419,16 +317,20 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         }
 
         public void DrawLabel(string text, float width, Color? color = null,
-            TextAnchor alignment = TextAnchor.MiddleLeft)
+            TextAnchor alignment = TextAnchor.MiddleLeft, bool highlighted = false)
         {
             color ??= Color.white;
 
-            var copy = new GUIStyle(TextStyle);
+            var styleCopy = new GUIStyle(TextStyle);
 
-            copy.alignment = alignment;
-            copy.normal.textColor = copy.focused.textColor = copy.hover.textColor = color.Value;
+            styleCopy.alignment = alignment;
+            styleCopy.normal.textColor = styleCopy.focused.textColor = styleCopy.hover.textColor = color.Value;
 
-            GUILayout.Label(text, copy, GUILayout.Width(width), GUILayout.Height(18));
+            var content = new GUIContent(text);
+            var rect = GUILayoutUtility.GetRect(content, styleCopy, GUILayout.Width(width), GUILayout.Height(18));
+
+            if (highlighted) EditorGUI.DrawRect(rect, HighlightedText);
+            GUI.Label(rect, content, styleCopy);
         }
 
         public void DrawCenteredLabel(string text, GUIStyle style)
@@ -471,7 +373,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
         private void OnEnable()
         {
-            Instance = this;
+            Inst = this;
             Application.logMessageReceived += HandleLog;
         }
 
@@ -483,13 +385,13 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void OnBeforeSceneLoad()
         {
-            Instance.Log?.Clear();
+            Inst.Log?.Clear();
         }
 
         private void OnDestroy()
         {
             Log.Clear();
-            tags.Clear();
+            Tags.Clear();
         }
 
         private void HandleLog(string message, string stacktrace, LogType type)
@@ -515,6 +417,13 @@ namespace Pukpukpuk.DataFeed.Console.Windows
             menu.AddItem(new GUIContent("Also Add Time Between Entries"), 
                 currentValue, 
                 () => config.AlsoAddTimeBetweenEntries = !currentValue);
+            
+            menu.AddSeparator("");
+
+            menu.AddItem(new GUIContent("Enabled Sub Entries/Time Between"), IsTimeBetweenEnabled,
+                () => IsTimeBetweenEnabled = !IsTimeBetweenEnabled);
+            menu.AddItem(new GUIContent("Enabled Sub Entries/Hidden Groups"), IsHiddenGroupsEnabled,
+                () => IsHiddenGroupsEnabled = !IsHiddenGroupsEnabled);
         }
         
         #endregion

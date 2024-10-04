@@ -1,5 +1,6 @@
 using System;
 using Pukpukpuk.DataFeed.Console.Windows;
+using Pukpukpuk.DataFeed.Console.Windows.Console;
 using UnityEngine;
 
 namespace Pukpukpuk.DataFeed.Console.Entries

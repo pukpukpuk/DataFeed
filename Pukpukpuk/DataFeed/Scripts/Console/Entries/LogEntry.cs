@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Pukpukpuk.DataFeed.Console.Windows;
+using Pukpukpuk.DataFeed.Console.Windows.Console;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEngine;
 
@@ -95,11 +96,13 @@ namespace Pukpukpuk.DataFeed.Console.Entries
                 color = MessageType.GetColor();
 
             ConsoleWindow.DrawLabel(layerText, ConsoleWindow.LayerColumnWidth, color, TextAnchor.MiddleRight);
-            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth);
+            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth, highlighted:IsMessageHighlighted());
             ConsoleWindow.DrawLabel(TimeText, ConsoleWindow.TimeColumnWidth);
             GUILayout.EndHorizontal();
         }
 
+        private bool IsMessageHighlighted() => ConsoleWindow.ToolbarDrawer.IsHighlighted(this);
+        
         public string GetStackWithHyperlinks()
         {
             if (!string.IsNullOrEmpty(StackWithHyperlinks_cached)) return StackWithHyperlinks_cached;

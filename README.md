@@ -47,7 +47,7 @@ In addition to mouse clicks, the list fully supports keyboard control:
 
 <h3>Where is the config?</h3>
 
-Also you can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
+You can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
 
 The config is located here: `Assets/Plugins/Pukpukpuk/DataFeed/Resources/DataFeed/`
 
