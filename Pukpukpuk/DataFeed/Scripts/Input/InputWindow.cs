@@ -9,7 +9,7 @@ using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
 
-namespace Pukpukpuk.DataFeed.Input.Editor
+namespace Pukpukpuk.DataFeed.Input
 {
 #if UNITY_EDITOR
     [Serializable]

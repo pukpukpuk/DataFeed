@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using Pukpukpuk.DataFeed.Console.Entries;
@@ -12,6 +11,7 @@ using UnityEngine;
 
 namespace Pukpukpuk.DataFeed.Console.Windows
 {
+#if UNITY_EDITOR
     public static class TableExporter
     {
         private static readonly string[] Headers = { "Layer", "Message", "Time", "Stacktrace", "Tag" };
@@ -337,4 +337,5 @@ namespace Pukpukpuk.DataFeed.Console.Windows
         
         #endregion
     }
+#endif
 }

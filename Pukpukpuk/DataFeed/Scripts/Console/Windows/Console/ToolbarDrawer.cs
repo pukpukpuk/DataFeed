@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Pukpukpuk.DataFeed.Console.Entries;
-using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
 
 namespace Pukpukpuk.DataFeed.Console.Windows.Console
 {
+#if UNITY_EDITOR
     [Serializable]
     public class ToolbarDrawer
     {
@@ -267,4 +267,5 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             menu.ShowAsContext();
         }
     }
+#endif
 }

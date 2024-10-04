@@ -6,7 +6,6 @@ using Pukpukpuk.DataFeed.Console.Entries;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Pukpukpuk.DataFeed.Console.Windows.Console
 {
@@ -110,9 +109,13 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             return loadedConfig;
         }
 
-        public static void LogToConsole(string message, string layerName,
+        public static void LogToConsole(
+            string message, 
+            string layerName,
             LogMessageType messageType = LogMessageType.Info,
-            string tag = null, string customPrefix = null, string customStack = null)
+            string tag = null, 
+            string customPrefix = null, 
+            string customStack = null)
         {
             if (Inst == null) return;
 

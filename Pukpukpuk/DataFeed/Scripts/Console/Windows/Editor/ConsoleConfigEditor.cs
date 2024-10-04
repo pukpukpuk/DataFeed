@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Pukpukpuk.DataFeed.Console.Windows
 {
     [CustomEditor(typeof(ConsoleConfig))]
-    public class ConsoleConfigEditor : Editor
+    public class ConsoleConfigEditor : UnityEditor.Editor
     {
         private const float RemoveButtonWidth = 25f;
         private static GUIStyle BoxStyle;

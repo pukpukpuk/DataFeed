@@ -17,13 +17,13 @@ namespace Pukpukpuk.DataFeed.Utils
                 _ => throw new ArgumentOutOfRangeException(nameof(logMessageType), logMessageType, null)
             };
         }
-
+        
         public static Color GetColor(this LogMessageType logMessageType)
         {
             ColorUtility.TryParseHtmlString(logMessageType.GetHex(), out var color);
             return color;
         }
-
+        
         public static string ColorText(string hex, string text)
         {
             return $"<color={hex}>{text}</color>";
