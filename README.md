@@ -60,6 +60,18 @@ DebugUtils.Log("Hello World!");
 DebugUtils.LogLayer("Hello World!", "Game", tag:"SomeTag");
 ```
 
+<h3>How to use start-up commands</h3>
+
+You can write a sequence of commands that will be executed when you start the game (works only in the editor). Field for this sequence located in the config.
+
+> <img width="450" src="ReadmeAssets/StartUpCommands.png"></br>
+
+You must call this sequence execution manually at end of the game initialization with this code:
+
+```cs
+InputWindow.Instance?.ExecuteStartUpCommands();
+```
+
 <h3>How to make own commands?</h3>
 
 Each command must inherit the `Pukpukpuk.DataFeed.Input.Command` class and have `Pukpukpuk.DataFeed.Input.CommandInfo` attribute. There is no need to register the command additionally.
