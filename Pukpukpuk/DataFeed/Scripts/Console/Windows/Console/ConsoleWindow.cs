@@ -382,7 +382,10 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
 
             highlightRect.yMin += 1;
             highlightRect.yMax -= 1;
+
+            highlightRect.xMax = Math.Clamp(highlightRect.xMax, 0, textRect.xMax);
             
+            if (highlightRect.xMax < highlightRect.xMin) return;
             EditorGUI.DrawRect(highlightRect, HighlightedTextColor);
         }
 
