@@ -19,7 +19,6 @@ namespace Pukpukpuk.DataFeed.Input
             return Completions
                 .Where(completion =>
                 {
-                    // Проекции двух заполнений должны пересекаться, чтобы через них можно было перейти
                     var left = Math.Min(completion.Left, otherCompletion.Left);
                     var right = Math.Max(completion.Right, otherCompletion.Right);
 

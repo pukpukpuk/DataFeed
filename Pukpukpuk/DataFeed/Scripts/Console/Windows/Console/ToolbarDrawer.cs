@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NPOI.SS.Formula.Functions;
 using Pukpukpuk.DataFeed.Console.Entries;
+using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,38 +13,80 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
     [Serializable]
     public class ToolbarDrawer
     {
-        private static readonly float[] ToolbarWidth = { 45f, 105f, 95f };
-        private const float MinSearchWidth = 140;
+        private static readonly Color ScrollBarMarkColor = new(.8f, .8f, .5f);
         
+        private static readonly float[] ToolbarWidth = { 45f, 105f, 95f };
+        private const float MinSearchFieldWidth = 140;
+        
+        // SeenLogEntries indexes of all found entries
         [SerializeField] private List<int> cachedSearchResult;
+        // Log indexes of all found entries. Used for calculating distances between entries
+        [SerializeField] private List<int> absoluteCachedSearchResult;
         [SerializeField] private int cursorIndex;
 
         [SerializeField] private bool caseSensitive;
         
-        private HashSet<LogEntry> cachedSearchResultEntries;
+        private Dictionary<LogEntry, HighlightData> cachedSearchResultEntries;
         
         private static GUIStyle ArrowButtonStyle => new("ButtonMid");
         private static GUIStyle ButtonStyle => new("TE toolbarbutton");
         private static GUIStyle DropdownStyle => new ("ToolbarDropDownLeft");
         private static float SearchFieldWidth => ConsoleWindow.Inst.WindowWidth - ToolbarWidth.Sum() + 25;
-        private static bool IsSearchDrawn => SearchFieldWidth >= MinSearchWidth;
+        private static bool IsSearchDrawn => SearchFieldWidth >= MinSearchFieldWidth;
         
         private static string SearchText
         {
             get => ConsoleWindow.Inst.SearchText;
             set => ConsoleWindow.Inst.SearchText = value;
         }
+
+        private static List<ILogEntry> SeenEntries => ConsoleWindow.Inst.SeenLogEntries ?? new List<ILogEntry>();
+
+        public bool SeenEntriesAreNotActual;
         
         public void DrawToolbar()
         {
-            GUILayout.BeginHorizontal();
+            if (SeenEntriesAreNotActual && Event.current.type != EventType.Repaint)
+            {
+                UpdateSearchResultList();
+                SeenEntriesAreNotActual = false;
+                ConsoleWindow.Inst.Repaint();
+            }
+            
+            GUILayout.BeginHorizontal(new GUIStyle("Toolbar"));
             
             DrawClearButton();
             DrawShownLayersPopup();
             DrawShownTagsPopup();
             DrawSearchField();
-
+            
             GUILayout.EndHorizontal();
+        }
+
+        public void DrawScrollBarMarks()
+        {
+            if (!ConsoleWindow.Inst.ScrollBarIsVisible) return;
+            
+            var totalEntriesCount = SeenEntries.Count;
+            if (totalEntriesCount == 0) return;
+            
+            var scrollBarRect = ConsoleWindow.Inst.ScrollBarRect;
+            scrollBarRect.yMin += 18;
+            scrollBarRect.yMax -= 18;
+
+            foreach (var entryIndex in cachedSearchResult)
+            {
+                var rect = new Rect(0, 0, 10, 1f)
+                {
+                    x = scrollBarRect.xMin,
+                    y = scrollBarRect.y,
+                };
+                
+                float k = (float) entryIndex / (totalEntriesCount - 1);
+                rect.y += scrollBarRect.height * k;
+
+                EditorGUI.DrawRect(rect, ScrollBarMarkColor);
+            }
         }
 
         private void DrawClearButton()
@@ -58,6 +102,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             ConsoleWindow.Inst.SelectedEntry = null;
 
             cachedSearchResult = null;
+            absoluteCachedSearchResult = null;
             UpdateCachedLogEntries();
         }
         
@@ -105,11 +150,16 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
         {
             if (!IsSearchDrawn) return;
 
-            var previousSearchText = SearchText;
+            var previousSearchText = SearchText ?? "";
             SearchText = GUILayout.TextField(SearchText, new GUIStyle("SearchTextField"),
                 GUILayout.MinWidth(20), GUILayout.ExpandWidth(true));
 
-            if (!previousSearchText.Equals(SearchText) || IsCachedResultsAreInvalid()) UpdateSearchResultList();
+            if (!previousSearchText.Equals(SearchText) || IsCachedResultsAreInvalid())
+            {
+                UpdateSearchResultList();
+                UpdateSearchFocus();
+            }
+            
             DrawOtherSearchElements();
         }
 
@@ -117,7 +167,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
         {
             if (!IsAnyCachedSearchResult()) return false;
             
-            var log = ConsoleWindow.Inst.Log;
+            var log = SeenEntries;
             if (cachedSearchResult.Count > log.Count) return true;
             if (cachedSearchResult[^1] >= log.Count) return true;
 
@@ -126,23 +176,46 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
         
         private void UpdateSearchResultList()
         {
-            var previousIndexOfSelectedEntry = IsAnyCachedSearchResult() 
-                ? cachedSearchResult[cursorIndex]
+            var previousIndexOfSelectedEntry = absoluteCachedSearchResult is { Count: > 0 }
+                ? absoluteCachedSearchResult[cursorIndex]
                 : 0;
-            cachedSearchResult = GetFoundEntries();
-            UpdateCachedLogEntries();
+            cachedSearchResult = GetFoundEntries(SeenEntries);
 
+            UpdateCachedLogEntries();
+            UpdateAbsoluteSearchResult();
+            
             var minDistance = int.MaxValue;
             for (int i = 0; i < cachedSearchResult.Count; i++)
             {
-                var distance = Math.Abs(cachedSearchResult[i] - previousIndexOfSelectedEntry);
+                var distance = Math.Abs(absoluteCachedSearchResult[i] - previousIndexOfSelectedEntry);
                     
                 if (distance >= minDistance) break;
                 minDistance = distance;
                 cursorIndex = i;
             }
-                
-            UpdateSearchFocus();
+            return;
+
+            Dictionary<LogEntry, int> GetAbsoluteIndexes()
+            {
+                var log = ConsoleWindow.Inst.Log;
+                var result = new Dictionary<LogEntry, int>();
+                for (int i = 0; i < log.Count; i++)
+                {
+                    result.Add(log[i], i);
+                }
+
+                return result;
+            }
+            
+            void UpdateAbsoluteSearchResult()
+            {
+                absoluteCachedSearchResult = new List<int>();
+                var absoluteIndexes = GetAbsoluteIndexes();
+                foreach (var entry in cachedSearchResultEntries.Keys)
+                {
+                    absoluteCachedSearchResult.Add(absoluteIndexes[entry]);
+                }
+            }
         }
         
         private void DrawOtherSearchElements()
@@ -165,12 +238,12 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             style.richText = true;
             style.alignment = TextAnchor.MiddleCenter;
 
-
             var content = new GUIContent("<color=white><b>Cc</b></color>", "Match Case");
-            if (GUILayout.Button(content, style, GUILayout.Width(26), GUILayout.Height(17)))
+            if (GUILayout.Button(content, style, GUILayout.Width(27), GUILayout.Height(17)))
             {
                 caseSensitive = !caseSensitive;
                 UpdateSearchResultList();
+                UpdateSearchFocus();
             }
             
             if (isButton) GUILayout.Space(1); 
@@ -207,8 +280,11 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             if (!IsAnyCachedSearchResult()) return;
 
             var index = cachedSearchResult[cursorIndex];
-            ConsoleWindow.Inst.SelectedEntry = ConsoleWindow.Inst.Log[index];
-            var scrollPosition = index * ConsoleWindow.LineHeight - (ConsoleWindow.Inst.LogViewerHeight - ConsoleWindow.LineHeight) / 2f;
+            ConsoleWindow.Inst.SelectedEntry = SeenEntries[index] as LogEntry;
+
+            var logViewerHeight = ConsoleWindow.Inst.LogViewerHeight;
+            var lineHeight = ConsoleWindow.LineHeight;
+            var scrollPosition = index * lineHeight - (logViewerHeight - lineHeight) / 2f;
 
             ConsoleWindow.Inst.ScrollPosition = Math.Clamp(scrollPosition, 0, ConsoleWindow.Inst.PreviousTotalHeight);
             ConsoleWindow.Inst.Repaint();
@@ -216,41 +292,50 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
 
         private bool IsAnyCachedSearchResult() => cachedSearchResult is { Count: > 0 };
 
-        private List<int> GetFoundEntries()
+        private List<int> GetFoundEntries<T>(List<T> log) where T : ILogEntry
         {
             if (string.IsNullOrEmpty(SearchText)) return new List<int>();
             
-            var temp = SearchText.Trim();
-            var comparisonType = caseSensitive 
-                ? StringComparison.CurrentCulture
-                : StringComparison.CurrentCultureIgnoreCase;
-            
             var result = new List<int>();
-            var log = ConsoleWindow.Inst.Log;
             for (int i = 0; i < log.Count; i++)
             {
-                var entry = log[i];
-                if (!entry.MessageWithoutTags.Contains(temp, comparisonType)) continue;
+                if (log[i] is not LogEntry entry) continue;
+                if (!IsTextMatchSearch(entry.MessageWithoutTags, out _)) continue;
                 result.Add(i);
             }
 
             return result;
         }
 
+        private bool IsTextMatchSearch(string text, out int index)
+        {
+            var comparisonType = caseSensitive 
+                ? StringComparison.CurrentCulture
+                : StringComparison.CurrentCultureIgnoreCase;
+
+            index = text.IndexOf(SearchText, comparisonType);
+            return index != -1;
+        }
+
         private void UpdateCachedLogEntries()
         {
-            cachedSearchResultEntries = new HashSet<LogEntry>();
+            cachedSearchResultEntries = new Dictionary<LogEntry, HighlightData>();
             if (!IsAnyCachedSearchResult()) return;
 
-            foreach (var index in cachedSearchResult)
+            foreach (var entryIndex in cachedSearchResult)
             {
-                cachedSearchResultEntries.Add(ConsoleWindow.Inst.Log[index]);
+                if (SeenEntries[entryIndex] is not LogEntry entry) continue;
+                IsTextMatchSearch(entry.MessageWithoutTags, out var index);
+                
+                var highlightData = new HighlightData(index, SearchText.Length);
+                cachedSearchResultEntries.Add(entry, highlightData);
             }
         }
 
-        public bool IsHighlighted(LogEntry entry)
+        public HighlightData GetHighlightData(LogEntry entry)
         {
-            return cachedSearchResultEntries != null && cachedSearchResultEntries.Contains(entry);
+            if (cachedSearchResultEntries == null) UpdateCachedLogEntries();
+            return cachedSearchResultEntries?.GetValueOrDefault(entry);
         }
         
         private void DrawShownTagsPopup()

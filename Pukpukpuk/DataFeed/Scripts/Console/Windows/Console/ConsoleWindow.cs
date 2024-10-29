@@ -6,6 +6,8 @@ using Pukpukpuk.DataFeed.Console.Entries;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
+using UnityEngine.Serialization;
 
 namespace Pukpukpuk.DataFeed.Console.Windows.Console
 {
@@ -13,7 +15,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
     [Serializable]
     public class ConsoleWindow : EditorWindow, IHasCustomMenu
     {
-        public static readonly Color HighlightedText = new(.8f, .8f, .5f, .3f);
+        public static readonly Color HighlightedTextColor = new(.8f, .8f, .5f, .3f);
         
         private const int MaxEntriesCount = 5000;
 
@@ -43,11 +45,14 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
         [SerializeField] public string SearchText;
         [SerializeField] public ToolbarDrawer ToolbarDrawer;
         
-        public LogEntry SelectedEntry;
+        [NonSerialized] public LogEntry SelectedEntry;
         
         private float autoUpdateCooldown;
         private bool needRepaint;
         public float PreviousTotalHeight;
+
+        public bool ScrollBarIsVisible { get; private set; }
+        public List<ILogEntry> SeenLogEntries { get; private set; }
         
         private GUIStyle EvenStyle;
         private GUIStyle OddStyle;
@@ -56,6 +61,8 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
         
         public float WindowWidth => position.width - ScrollbarWidth;
         public float MessageColumnWidth => WindowWidth - LayerColumnWidth - TimeColumnWidth;
+
+        public Rect ScrollBarRect;
         
         private void OnGUI()
         {
@@ -71,6 +78,8 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             Splitter.BeginSecondPart(SplitterData);
             DrawStackInfo();
             Splitter.End();
+
+            ToolbarDrawer.DrawScrollBarMarks();
         }
 
         private void DrawStackInfo()
@@ -162,31 +171,44 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             UpdateStyles();
             UpdateTitleText();
 
-            var seenLogEntries = GetSeenLogEntries();
-            if (seenLogEntries.Count == 0) return;
-            UpdateLayerColumnWidth(seenLogEntries);
+            var previousSeenLogEntriesHash = SeenLogEntries?.GetHashCode() ?? 0;
+            SeenLogEntries = GetSeenLogEntries();
+            
+            if (previousSeenLogEntriesHash != SeenLogEntries.GetHashCode()) ToolbarDrawer.SeenEntriesAreNotActual = true;
+            
+            if (SeenLogEntries.Count == 0) return;
+            UpdateLayerColumnWidth(SeenLogEntries);
 
-            var scrollPosition_safe = UpdateAutoScroll(seenLogEntries, areaHeight);
-            var (firstBound, secondBound) = CalculateBounds(scrollPosition_safe, areaHeight, seenLogEntries);
+            var scrollPosition_safe = UpdateAutoScroll(SeenLogEntries, areaHeight);
+            var (firstBound, secondBound) = CalculateBounds(scrollPosition_safe, areaHeight, SeenLogEntries);
+            ScrollBarIsVisible = areaHeight < PreviousTotalHeight - 1;
             
             GUILayout.Space(firstBound * LineHeight);
             var previousSelected = SelectedEntry;
 
             for (var i = firstBound; i <= secondBound; i++)
             {
-                var entry = seenLogEntries[i];
+                var entry = SeenLogEntries[i];
 
                 var style = entry == SelectedEntry ? StyleOfSelected : GetStyle(i % 2 == 0);
                 entry.Draw(style);
                 UpdateSelectedEntry(entry);
             }
             
-            GUILayout.Space((seenLogEntries.Count - secondBound - 1) * LineHeight);
+            GUILayout.Space((SeenLogEntries.Count - secondBound - 1) * LineHeight);
 
             GUILayout.FlexibleSpace();
             GUILayout.EndScrollView();
-
+            UpdateScrollBarRect();
+            
             if (previousSelected != SelectedEntry) Repaint();
+        }
+
+        private void UpdateScrollBarRect()
+        {
+            ScrollBarRect = GUILayoutUtility.GetLastRect();
+            ScrollBarRect.y += LineHeight;
+            ScrollBarRect.xMin = ScrollBarRect.xMax - 11;
         }
 
         private float UpdateAutoScroll(List<ILogEntry> seenLogEntries, float areaHeight)
@@ -197,7 +219,7 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             PreviousTotalHeight = currentTotalHeight;
             
             var scrollPosition_safe = ScrollPosition = GUILayout.BeginScrollView(new Vector2(0, ScrollPosition)).y;
-
+            
             if (Event.current.type == EventType.Repaint) scrollPosition_safe = previousScrollPosition;
             else previousScrollPosition = scrollPosition_safe;
 
@@ -319,21 +341,49 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             };
         }
 
-        public void DrawLabel(string text, float width, Color? color = null,
-            TextAnchor alignment = TextAnchor.MiddleLeft, bool highlighted = false)
+        public void DrawLabel(string text, 
+            float width, 
+            Color? color = null,
+            TextAnchor alignment = TextAnchor.MiddleLeft, 
+            string textWithoutTags = null,
+            HighlightData highlightData = null)
         {
             color ??= Color.white;
+            textWithoutTags ??= StringUtils.RemoveTags(text);
 
             var styleCopy = new GUIStyle(TextStyle);
-
             styleCopy.alignment = alignment;
             styleCopy.normal.textColor = styleCopy.focused.textColor = styleCopy.hover.textColor = color.Value;
 
-            var content = new GUIContent(text);
-            var rect = GUILayoutUtility.GetRect(content, styleCopy, GUILayout.Width(width), GUILayout.Height(18));
+            var textRect = GUILayoutUtility.GetRect(new GUIContent(textWithoutTags), styleCopy, 
+                GUILayout.Width(width), GUILayout.Height(18));
 
-            if (highlighted) EditorGUI.DrawRect(rect, HighlightedText);
-            GUI.Label(rect, content, styleCopy);
+            DrawHighlightRect(textWithoutTags, textRect, styleCopy, highlightData);
+            GUI.Label(textRect, new GUIContent(text), styleCopy);
+        }
+
+        private void DrawHighlightRect(string text, Rect textRect, GUIStyle style, HighlightData highlightData)
+        {
+            if (highlightData == null) return;
+            if (highlightData.Length <= 0) return;
+            
+            int index = Math.Clamp(highlightData.Index, 0, text.Length - 1);
+            int length = Math.Clamp(highlightData.Length, 0, text.Length - index);
+
+            var beforeHighlightWidth = index > 0 
+                ? style.CalcSize(new GUIContent(text[..(index - 1)])).x + 4
+                : 0;
+            
+            var highlightRect = new Rect(textRect);
+            highlightRect.xMin += beforeHighlightWidth;
+
+            var highlightWidth = style.CalcSize(new GUIContent(text.Substring(index, length))).x;
+            highlightRect.width = highlightWidth - 2;
+
+            highlightRect.yMin += 1;
+            highlightRect.yMax -= 1;
+            
+            EditorGUI.DrawRect(highlightRect, HighlightedTextColor);
         }
 
         public void DrawCenteredLabel(string text, GUIStyle style)
@@ -405,10 +455,6 @@ namespace Pukpukpuk.DataFeed.Console.Windows.Console
             LogToConsole(message, "Undefined", messageType, messageType.ToString(),
                 messageType.ToString(), stacktrace);
         }
-
-        #endregion
-        
-        #region Export
 
         void IHasCustomMenu.AddItemsToMenu(GenericMenu menu)
         {

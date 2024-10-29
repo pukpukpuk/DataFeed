@@ -207,13 +207,11 @@ namespace Pukpukpuk.DataFeed.Input
             completionsScroll = GUILayout.BeginScrollView(new Vector2(0, completionsScroll),
                 false, true).y;
             GUILayout.BeginHorizontal(GUILayout.ExpandHeight(true), GUILayout.MaxWidth(position.width));
-
-            // Левая часть
+            
             var leftCompletions = GetCompletionsForCommands(out var altText);
             leftCompletions.Sort();
             DrawCompletionsList(leftCompletions, altText, FirstPartWidth, false);
 
-            // Правая часть
             var rightCompletions = GetCompletionsFromBuffer();
             rightCompletions.RemoveAll(completion => leftCompletions.Contains(completion));
             DrawCompletionsList(rightCompletions, "There are no completions from buffer",
@@ -245,8 +243,7 @@ namespace Pukpukpuk.DataFeed.Input
             {
                 var content = new GUIContent(text);
                 var minCompletionWidth = ButtonStyle.CalcSize(content).x;
-
-                // Переход на следующую строку
+                
                 if (minCompletionWidth > remainWidth && !isFirst)
                 {
                     GUILayout.EndHorizontal();
@@ -257,13 +254,12 @@ namespace Pukpukpuk.DataFeed.Input
 
                     isFirst = true;
                 }
-
-                // Покраска кнопки в синий, если она сейчас выделена
+                
                 var previousColor = GUI.color;
                 if (!InputIsFocused && focusPosition.y == lineIndex && text == FocusedCompletionText)
                 {
                     GUI.color = SelectedColor;
-                    // Долистываем до выбранного завершения
+
                     var lineBottomPosition = lineIndex * 22;
                     var lineUpPosition = lineBottomPosition - 22;
 
@@ -281,7 +277,6 @@ namespace Pukpukpuk.DataFeed.Input
                         GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)))
                     OnCompletionClick(text, fullyReplaceInput);
 
-                // Заполнение списка completionLines
                 var rect = GUILayoutUtility.GetLastRect();
                 var completion = new Completion(text, rect.x, rect.x + rect.width);
 
@@ -304,7 +299,6 @@ namespace Pukpukpuk.DataFeed.Input
 
         private List<string> GetCompletionsForCommands(out string altText)
         {
-            // Если в сплите ток одно слово - значит юзверь пока еще пишет только название команды
             var split = textFieldValue.Split(' ');
             if (split.Length <= 1)
             {
@@ -372,7 +366,6 @@ namespace Pukpukpuk.DataFeed.Input
 
             var newLineIndex = (focusPosition.y + shift + linesCount) % linesCount;
 
-            // Если получилось найти кнопку рядом с текущей - перемещаемся на линию с индексом newLineIndex
             var current = GetCompletionAtFocus();
             var next = completionLines[newLineIndex].GetNearestFor(current);
 

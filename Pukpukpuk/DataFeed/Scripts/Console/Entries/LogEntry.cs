@@ -52,7 +52,7 @@ namespace Pukpukpuk.DataFeed.Console.Entries
             get => _message;
             set
             {
-                _message = value;
+                _message = value.Replace("\n", "\\n");
                 MessageWithoutTags = StringUtils.RemoveTags(_message);
             }
         }
@@ -95,13 +95,14 @@ namespace Pukpukpuk.DataFeed.Console.Entries
             if (Layer.Name == "Undefined" && MessageType is LogMessageType.Warning or LogMessageType.Error)
                 color = MessageType.GetColor();
 
+            var highlightData = ConsoleWindow.Inst.ToolbarDrawer.GetHighlightData(this);
+            
             ConsoleWindow.DrawLabel(layerText, ConsoleWindow.LayerColumnWidth, color, TextAnchor.MiddleRight);
-            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth, highlighted:IsMessageHighlighted());
+            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth, textWithoutTags:MessageWithoutTags, 
+                highlightData:highlightData);
             ConsoleWindow.DrawLabel(TimeText, ConsoleWindow.TimeColumnWidth);
             GUILayout.EndHorizontal();
         }
-
-        private bool IsMessageHighlighted() => ConsoleWindow.ToolbarDrawer.IsHighlighted(this);
         
         public string GetStackWithHyperlinks()
         {

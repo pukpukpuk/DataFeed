@@ -27,8 +27,7 @@ namespace Pukpukpuk.DataFeed.Utils
         private static void EndFirstPart(SplitterData data)
         {
             GUILayout.EndArea();
-
-            // Рисуем границу деления
+            
             var dividerRect = data.Horizontal
                 ? new Rect(data.LeftWidth - Thickness / 2f, 0, Thickness, data.Window.position.height)
                 : new Rect(0, data.UpperHeight - Thickness / 2f, data.Window.position.width, Thickness);
@@ -44,7 +43,6 @@ namespace Pukpukpuk.DataFeed.Utils
             EditorGUIUtility.AddCursorRect(dividerHitBoxRect,
                 data.Horizontal ? MouseCursor.ResizeHorizontal : MouseCursor.ResizeVertical);
 
-            // Обрабатываем события мыши для перемещения границы
             if (Event.current.type == EventType.MouseDown && dividerHitBoxRect.Contains(Event.current.mousePosition))
                 data.IsDragging = true;
             if (data.IsDragging && Event.current.type == EventType.MouseDrag)
