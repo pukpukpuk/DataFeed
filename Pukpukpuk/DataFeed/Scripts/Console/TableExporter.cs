@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using Pukpukpuk.DataFeed.Console.Entries;
-using Pukpukpuk.DataFeed.Console.Windows.Console;
+using Pukpukpuk.DataFeed.Shared;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
 
-namespace Pukpukpuk.DataFeed.Console.Windows
+namespace Pukpukpuk.DataFeed.Console
 {
 #if UNITY_EDITOR
     public static class TableExporter

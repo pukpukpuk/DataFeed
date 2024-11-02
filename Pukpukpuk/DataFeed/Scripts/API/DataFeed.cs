@@ -1,16 +1,14 @@
-using Pukpukpuk.DataFeed.Console.Windows.Console;
+using Pukpukpuk.DataFeed.Console;
+using Pukpukpuk.DataFeed.Input;
+using Pukpukpuk.DataFeed.Shared;
 using Pukpukpuk.DataFeed.Utils;
 
-namespace Pukpukpuk.DataFeed.Console
+namespace Pukpukpuk.DataFeed.API
 {
-    public static class DebugUtils
+    public static class DataFeed
     {
-        public const string Gray = "#ababab";
-        public const string White = "#ffffff";
-
-        public const string Red = "#cc6666";
-        public const string Yellow = "#fceba8";
-
+        private const string White = "#ffffff";
+        
         public const string PlusSign = "<color=#6ec077>+</color>";
         public const string MinusSign = "<color=#cc6666>-</color>";
 
@@ -70,13 +68,12 @@ namespace Pukpukpuk.DataFeed.Console
             ConsoleWindow.LogToConsole(text, "Undefined", logMessageType);
 #endif
         }
-    }
 
-    public enum LogMessageType
-    {
-        Unimportant,
-        Info,
-        Warning,
-        Error
+        public static void ExecuteStartupCommands()
+        {
+#if UNITY_EDITOR
+            InputWindow.Instance?.ExecuteStartUpCommands();
+#endif
+        }
     }
 }

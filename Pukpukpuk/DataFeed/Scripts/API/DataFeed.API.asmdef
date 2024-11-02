@@ -1,0 +1,17 @@
+{
+    "name": "DataFeed.API",
+    "rootNamespace": "",
+    "references": [
+        "GUID:3880b0355b8e36b48a4232b9530d9d1a",
+        "GUID:bbdb7faa2754270418b533ad2c35e509"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,4 +1,4 @@
-namespace Pukpukpuk.DataFeed.Console.Windows.Console
+namespace Pukpukpuk.DataFeed.Console
 {
     public record HighlightData
     {

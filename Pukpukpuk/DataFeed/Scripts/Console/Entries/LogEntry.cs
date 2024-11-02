@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Pukpukpuk.DataFeed.Console.Windows;
-using Pukpukpuk.DataFeed.Console.Windows.Console;
+using Pukpukpuk.DataFeed.Console.Config;
+using Pukpukpuk.DataFeed.Shared;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEngine;
 

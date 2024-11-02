@@ -45,22 +45,22 @@ In addition to mouse clicks, the list fully supports keyboard control:
 
 <h2 align="center">Usage Guide</h2>
 
+<h3>How to send messages to the console?</h3>
+
+`DataFeed` class is responsible for console message output:
+
+```cs
+DataFeed.Log("Hello World!");
+DataFeed.LogLayer("Hello World!", "Game", tag:"SomeTag");
+```
+
 <h3>Where is the config?</h3>
 
 You can access config file by following `Tools/Pukpukpuk/Open DataFeed Config` in Unity menu bar.
 
 The config is located here: `Assets/Plugins/Pukpukpuk/DataFeed/Resources/DataFeed/`
 
-<h3>How to send messages to the console?</h3>
-
-`DebugUtils` class is responsible for console message output:
-
-```cs
-DebugUtils.Log("Hello World!");
-DebugUtils.LogLayer("Hello World!", "Game", tag:"SomeTag");
-```
-
-<h3>How to use start-up commands</h3>
+<h3>How to use start-up commands?</h3>
 
 You can write a sequence of commands that will be executed when you start the game (works only in the editor). Field for this sequence located in the config.
 
@@ -69,7 +69,7 @@ You can write a sequence of commands that will be executed when you start the ga
 You must call this sequence execution manually at end of the game initialization with this code:
 
 ```cs
-InputWindow.Instance?.ExecuteStartUpCommands();
+DataFeed.ExecuteStartUpCommands();
 ```
 
 <h3>How to make own commands?</h3>

@@ -1,0 +1,16 @@
+{
+    "name": "DataFeed.Input",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bbdb7faa2754270418b533ad2c35e509"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using Pukpukpuk.DataFeed.Console.Config;
 using Pukpukpuk.DataFeed.Console.Entries;
+using Pukpukpuk.DataFeed.Shared;
 using Pukpukpuk.DataFeed.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
-using UnityEngine.Serialization;
 
-namespace Pukpukpuk.DataFeed.Console.Windows.Console
+namespace Pukpukpuk.DataFeed.Console
 {
 #if UNITY_EDITOR
     [Serializable]

@@ -1,14 +1,14 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Pukpukpuk.DataFeed.Console.Windows.Console;
 using UnityEditor;
 using UnityEngine;
 
-namespace Pukpukpuk.DataFeed.Console.Windows
+namespace Pukpukpuk.DataFeed.Console.Config
 {
     [CustomEditor(typeof(ConsoleConfig))]
-    public class ConsoleConfigEditor : UnityEditor.Editor
+    public class ConsoleConfigEditor : Editor
     {
         private const float RemoveButtonWidth = 25f;
         private static GUIStyle BoxStyle;
@@ -162,3 +162,4 @@ namespace Pukpukpuk.DataFeed.Console.Windows
 
     }
 }
+#endif

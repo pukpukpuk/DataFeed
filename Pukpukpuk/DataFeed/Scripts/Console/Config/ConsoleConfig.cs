@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace Pukpukpuk.DataFeed.Console.Windows
+namespace Pukpukpuk.DataFeed.Console.Config
 {
     [CreateAssetMenu(menuName = "DataFeed/Console Config")]
     [Serializable]
