@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Pukpukpuk.DataFeed.Utils
 {
     public static class TextureUtils
     {
+        private static readonly Dictionary<Color, Texture2D> _cachedTextures = new();
+        
         public static GUIStyle CreateBackground(Color color)
         {
             var result = new GUIStyle();
@@ -11,17 +14,15 @@ namespace Pukpukpuk.DataFeed.Utils
             return result;
         }
 
-        public static Texture2D CreateTexture(Color col, int width = 1, int height = 1)
+        public static Texture2D CreateTexture(Color color)
         {
-            var pix = new Color[width * height];
+            if (_cachedTextures.TryGetValue(color, out var texture)) return texture;
 
-            for (var i = 0; i < pix.Length; i++)
-                pix[i] = col;
-
-            var result = new Texture2D(width, height);
-            result.SetPixels(pix);
+            var result = new Texture2D(1, 1);
+            result.SetPixels(new [] {color});
             result.Apply();
-
+            
+            _cachedTextures[color] = result;
             return result;
         }
     }
