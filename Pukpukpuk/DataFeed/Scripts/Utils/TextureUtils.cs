@@ -16,7 +16,7 @@ namespace Pukpukpuk.DataFeed.Utils
 
         public static Texture2D CreateTexture(Color color)
         {
-            if (_cachedTextures.TryGetValue(color, out var texture)) return texture;
+            if (_cachedTextures.TryGetValue(color, out var texture) && texture) return texture;
 
             var result = new Texture2D(1, 1);
             result.SetPixels(new [] {color});

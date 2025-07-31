@@ -63,9 +63,12 @@ namespace Pukpukpuk.DataFeed.Console
         public float MessageColumnWidth => WindowWidth - LayerColumnWidth - TimeColumnWidth;
 
         public Rect ScrollBarRect;
+
+        private double _lastUnloadTime;
         
         private void OnGUI()
         {
+            UnloadUnusedResources();
             RemoveRedundantEntries();
             
             ToolbarDrawer ??= new ToolbarDrawer();
@@ -90,7 +93,7 @@ namespace Pukpukpuk.DataFeed.Console
 
             var text = SelectedEntry.Message + "\n" + SelectedEntry.GetStackWithHyperlinks();
             var height = StackStyle.CalcHeight(new GUIContent(text), position.width - 12);
-
+            
             EditorGUILayout.SelectableLabel(text, StackStyle,
                 GUILayout.ExpandHeight(true), GUILayout.MinHeight(height));
             EditorGUILayout.EndScrollView();
@@ -163,14 +166,24 @@ namespace Pukpukpuk.DataFeed.Console
         {
             return Resources.Load<Texture>("DataFeed/Icon");
         }
+
+        private void UnloadUnusedResources()
+        {
+            var currentTime = EditorApplication.timeSinceStartup;
+            if (currentTime - _lastUnloadTime < 10f) return;
+            
+            Resources.UnloadUnusedAssets();
+            _lastUnloadTime = currentTime;
+        }
         
         #region Table
 
+        // дело в этом блоке 
         private void DrawTable(float areaHeight)
         {
             UpdateStyles();
             UpdateTitleText();
-
+            
             var previousSeenLogEntriesHash = SeenLogEntries?.GetHashCode() ?? 0;
             SeenLogEntries = GetSeenLogEntries();
             
@@ -178,25 +191,25 @@ namespace Pukpukpuk.DataFeed.Console
             
             if (SeenLogEntries.Count == 0) return;
             UpdateLayerColumnWidth(SeenLogEntries);
-
+            
             var scrollPosition_safe = UpdateAutoScroll(SeenLogEntries, areaHeight);
             var (firstBound, secondBound) = CalculateBounds(scrollPosition_safe, areaHeight, SeenLogEntries);
             ScrollBarIsVisible = areaHeight < PreviousTotalHeight - 1;
             
             GUILayout.Space(firstBound * LineHeight);
             var previousSelected = SelectedEntry;
-
+            
             for (var i = firstBound; i <= secondBound; i++)
             {
                 var entry = SeenLogEntries[i];
-
+                
                 var style = entry == SelectedEntry ? StyleOfSelected : GetStyle(i % 2 == 0);
                 entry.Draw(style);
                 UpdateSelectedEntry(entry);
             }
             
             GUILayout.Space((SeenLogEntries.Count - secondBound - 1) * LineHeight);
-
+            
             GUILayout.FlexibleSpace();
             GUILayout.EndScrollView();
             UpdateScrollBarRect();
@@ -303,13 +316,11 @@ namespace Pukpukpuk.DataFeed.Console
 
             void TryEndHiddenGroup()
             {
-                if (hiddenElementsCount > 0)
-                {
-                    hiddenGroups[^1].Count = hiddenElementsCount;
-                    hiddenElementsCount = 0;
+                if (hiddenElementsCount <= 0) return;
+                hiddenGroups[^1].Count = hiddenElementsCount;
+                hiddenElementsCount = 0;
 
-                    if (isHiddenGroupExpanded) result.Add(new HiddenEntriesGroupEnd(this));
-                }
+                if (isHiddenGroupExpanded) result.Add(new HiddenEntriesGroupEnd(this));
             }
         }
 
@@ -327,12 +338,14 @@ namespace Pukpukpuk.DataFeed.Console
             EvenStyle = TextureUtils.CreateBackground(new Color(.25f, .25f, .25f));
             StyleOfSelected = TextureUtils.CreateBackground(new Color(.17f, .36f, .53f));
 
-            TextStyle = new GUIStyle("Label");
-            TextStyle.richText = true;
-            TextStyle.wordWrap = false;
-            TextStyle.font = EditorGUIUtility.Load("Fonts/RobotoMono/RobotoMono-Regular.ttf") as Font;
-            
-            StackStyle = new GUIStyle("Label")
+            TextStyle ??= new GUIStyle("Label")
+            {
+                richText = true,
+                wordWrap = false,
+                font = EditorGUIUtility.Load("Fonts/RobotoMono/RobotoMono-Regular.ttf") as Font
+            };
+
+            StackStyle ??= new GUIStyle("Label")
             {
                 wordWrap = true,
                 alignment = TextAnchor.UpperLeft,
@@ -340,7 +353,9 @@ namespace Pukpukpuk.DataFeed.Console
                 font = TextStyle.font
             };
         }
-
+        
+        private static readonly Dictionary<string, string> withoutTags = new();
+        private static readonly Dictionary<(TextAnchor, Color), GUIStyle> styleCache = new();
         public void DrawLabel(string text, 
             float width, 
             Color? color = null,
@@ -349,17 +364,29 @@ namespace Pukpukpuk.DataFeed.Console
             HighlightData highlightData = null)
         {
             color ??= Color.white;
-            textWithoutTags ??= StringUtils.RemoveTags(text);
 
-            var styleCopy = new GUIStyle(TextStyle);
-            styleCopy.alignment = alignment;
-            styleCopy.normal.textColor = styleCopy.focused.textColor = styleCopy.hover.textColor = color.Value;
+            if (textWithoutTags == null)
+            {
+                if (!withoutTags.TryGetValue(text, out textWithoutTags))
+                {
+                    withoutTags[text] = textWithoutTags = StringUtils.RemoveTags(text);
+                }
+            }
 
-            var textRect = GUILayoutUtility.GetRect(new GUIContent(textWithoutTags), styleCopy, 
+            var key = (alignment, color.Value);
+            if (!styleCache.TryGetValue(key, out var style))
+            {
+                style = new GUIStyle(TextStyle);
+                style.alignment = alignment;
+                style.normal.textColor = style.focused.textColor = style.hover.textColor = color.Value;
+                styleCache[key] = style;
+            }
+            
+            var textRect = GUILayoutUtility.GetRect(new GUIContent(textWithoutTags), style, 
                 GUILayout.Width(width), GUILayout.Height(18));
 
-            DrawHighlightRect(textWithoutTags, textRect, styleCopy, highlightData);
-            GUI.Label(textRect, new GUIContent(text), styleCopy);
+            DrawHighlightRect(textWithoutTags, textRect, style, highlightData); 
+            GUI.Label(textRect, text, style); 
         }
 
         private void DrawHighlightRect(string text, Rect textRect, GUIStyle style, HighlightData highlightData)
@@ -441,7 +468,7 @@ namespace Pukpukpuk.DataFeed.Console
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void OnBeforeSceneLoad()
         {
-            Inst.Log?.Clear();
+            Inst?.Log?.Clear();
         }
 
         private void OnDestroy()

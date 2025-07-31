@@ -10,7 +10,7 @@ namespace Pukpukpuk.DataFeed.Console.Config
     public class ConsoleConfig : ScriptableObject
     {
         public int MaxEntries = 5000;
-        public int MaxBufferSize = 20;
+        public int MaxBufferSize = 40;
         public List<Layer> Layers = new();
 
         public List<string> GameStartCommands = new();

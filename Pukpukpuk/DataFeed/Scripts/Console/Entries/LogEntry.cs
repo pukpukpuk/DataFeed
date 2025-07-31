@@ -90,15 +90,15 @@ namespace Pukpukpuk.DataFeed.Console.Entries
             GUILayout.BeginHorizontal(style);
 
             var layerText = LayerText;
-            var color = Layer.GetColor();
-
+            var color = Layer.GetColor(); 
+            
             if (Layer.Name == "Undefined" && MessageType is LogMessageType.Warning or LogMessageType.Error)
                 color = MessageType.GetColor();
 
             var highlightData = ConsoleWindow.Inst.ToolbarDrawer.GetHighlightData(this);
             
             ConsoleWindow.DrawLabel(layerText, ConsoleWindow.LayerColumnWidth, color, TextAnchor.MiddleRight);
-            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth, textWithoutTags:MessageWithoutTags, 
+            ConsoleWindow.DrawLabel(Message, ConsoleWindow.MessageColumnWidth, textWithoutTags: MessageWithoutTags,
                 highlightData:highlightData);
             ConsoleWindow.DrawLabel(TimeText, ConsoleWindow.TimeColumnWidth);
             GUILayout.EndHorizontal();

@@ -17,6 +17,16 @@ MonoBehaviour:
   Layers:
   - Name: Commands
     Hex: '#C2B4FF'
+  - Name: Entities
+    Hex: '#89C4D4'
+  - Name: Player
+    Hex: '#CAD18F'
+  - Name: Items
+    Hex: '#8FD1AE'
+  - Name: Actions
+    Hex: '#D18FA2'
+  - Name: Map
+    Hex: '#B7EAEE'
   GameStartCommands:
   - '# hi'
   UpKey: 117
@@ -24,3 +34,4 @@ MonoBehaviour:
   DownKey: 106
   RightKey: 107
   ExportTableFont: Consolas
+  AlsoAddTimeBetweenEntries: 1

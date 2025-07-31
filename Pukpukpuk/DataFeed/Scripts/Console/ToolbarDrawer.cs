@@ -42,14 +42,14 @@ namespace Pukpukpuk.DataFeed.Console
         private static List<ILogEntry> SeenEntries => ConsoleWindow.Inst.SeenLogEntries ?? new List<ILogEntry>();
 
         public bool SeenEntriesAreNotActual;
-        
+
         public void DrawToolbar()
         {
             if (SeenEntriesAreNotActual && Event.current.type != EventType.Repaint)
             {
                 UpdateSearchResultList();
                 SeenEntriesAreNotActual = false;
-                ConsoleWindow.Inst.Repaint();
+                // ConsoleWindow.Inst.Repaint();
             }
             
             GUILayout.BeginHorizontal(new GUIStyle("Toolbar"));
@@ -61,7 +61,7 @@ namespace Pukpukpuk.DataFeed.Console
             
             GUILayout.EndHorizontal();
         }
-
+        
         public void DrawScrollBarMarks()
         {
             if (!ConsoleWindow.Inst.ScrollBarIsVisible) return;
@@ -212,7 +212,8 @@ namespace Pukpukpuk.DataFeed.Console
                 var absoluteIndexes = GetAbsoluteIndexes();
                 foreach (var entry in cachedSearchResultEntries.Keys)
                 {
-                    absoluteCachedSearchResult.Add(absoluteIndexes[entry]);
+                    if (absoluteIndexes.TryGetValue(entry, out var index))
+                        absoluteCachedSearchResult.Add(index);
                 }
             }
         }
